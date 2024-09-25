@@ -1,0 +1,13 @@
+{
+  "name": "Jane Doe",
+  "age": 32,
+  "isStudent": true,
+  "hobby": ["Music listening", "Bouldering", "Programming"],
+  "address": {
+    "city": "Seoul",
+    "postalCode": 12345,
+    "country": "South Korea"
+  },
+  "courses": [{ "name": "iOS" }, { "name": "Node.js" }, { "name": "PostgreSQL" }],
+  "isMarried": false
+}

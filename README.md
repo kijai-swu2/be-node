@@ -6,6 +6,9 @@
 
 - require("moduleName")
 - exports
+- http
+  - createServer
+  - listen
 - fs
   - readFile ( with a call back function )
   - readFileSync ( without a call back function )
@@ -22,3 +25,6 @@
   - cpus
   - totalmem
   - freemem
+- url
+  - parse().pathname
+  - parse().query
