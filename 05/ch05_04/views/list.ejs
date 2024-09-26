@@ -1,0 +1,39 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Posts</title>
+    <link rel="stylesheet" href="https://unpkg.com/simpledotcss/simple.min.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Posts</h1>
+      <figure>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th style="width: 400px">Title</th>
+              <th>Author</th>
+              <th>Date</th>
+              <th>Views</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% posts.forEach((item) => { %>
+            <tr>
+              <td><%= item.id %></td>
+              <td><a href="/view/<%= item["id"] %>"><%= item.title %></a></td>
+              <td><%= item.author %></td>
+              <td><%= item.createdAt %></td>
+              <td><%= item.count %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <p></p>
+        <a class="button" href="/create">New post</a>
+      </figure>
+    </div>
+  </body>
+</html>

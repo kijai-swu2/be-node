@@ -2,9 +2,12 @@
 
 ## Node.js
 
-### Module
+### Modules
 
-- require("moduleName")
+```js
+const moduleName = require("${moduleName}");
+```
+
 - exports
 - http
   - createServer
@@ -28,3 +31,20 @@
 - url
   - parse().pathname
   - parse().query
+- express
+  - get
+  - listen
+  - send
+  - json()
+- nodemon
+  - npm run ${keyword} : Run a file with nodemon, using a keyword.
+- pug
+- handlebars : {{ }}
+- ejs : <% %>
+
+## NPM commands
+
+### Initiating a new NPM Project
+
+- npm init -y
+- npm i ${moduleName}

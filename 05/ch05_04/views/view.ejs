@@ -1,0 +1,36 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post</title>
+    <link rel="stylesheet" href="https://unpkg.com/simpledotcss/simple.min.css" />
+    <style>
+      .space-between {
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Post <%= post.id %></h1>
+    </header>
+    <main>
+      <div class="container">
+        <section>
+          <h2><%= post.title %></h2>
+          <p class="space-between">
+            <span><%= post.author %></span>
+            <span><%= post.createdAt %></span>
+          </p>
+        </section>
+        <p><%= post.content %></p>
+        <p class="space-between">
+          <a href="/list" class="button">Back to List</a>
+          <a href="/list" class="button">Delete</a>
+          <a href="/edit" class="button">Edit</a>
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

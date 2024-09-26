@@ -1,0 +1,31 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Creating a board Ex</title>
+    <!-- Simple CSS Minified version -->
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Contents</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% 
+          posts.forEach((item) => {
+        %>
+        <tr>
+          <td><%= item.title %></td>
+          <td><%= item.content %></td>
+        </tr>
+        <%
+          });
+        %>
+      </tbody>
+    </table>
+  </body>
+</html>
