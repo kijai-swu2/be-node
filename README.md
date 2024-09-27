@@ -35,12 +35,19 @@ const moduleName = require("${moduleName}");
   - get
   - listen
   - send
-  - json()
+  - json
+  - post
 - nodemon
   - npm run ${keyword} : Run a file with nodemon, using a keyword.
 - pug
 - handlebars : {{ }}
 - ejs : <% %>
+- moment
+  - format("${format}")
+- sqlite3
+  - serialize
+  - all : To fetch all rows
+  - run : To excute a query
 
 ## NPM commands
 
