@@ -1,0 +1,33 @@
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+    <style>
+      body {
+        grid-template-rows: auto 1fr;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Register</h1>
+    </header>
+    <main>
+      <form method="post" action="/register">
+        <figure>
+          <label for="username">ID</label>
+          <input type="text" name="username" id="username" required />
+          <label for="nickname">Nickname</label>
+          <input type="text" name="nickname" id="nickname" required />
+          <label for="password">Password</label>
+          <input type="password" name="password" id="password" required />
+          <p>
+            <button type="submit">Register</button>
+          </p>
+        </figure>
+      </form>
+    </main>
+  </body>
+</html>
