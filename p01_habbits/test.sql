@@ -36,3 +36,5 @@ INSERT INTO habbits( userId, habbitName, startsAt, endsAt, createdAt ) VALUES (
 SELECT * FROM habbits WHERE id = id;
 
 INSERT INTO habbitRecords(habbitId, recordContent, createdAt) VALUES (1, '첫 번째 성공', '${createdAt}');
+
+UPDATE habbitRecords SET isDeleted = TRUE WHERE habbitRecords = ${habbitRecords};
