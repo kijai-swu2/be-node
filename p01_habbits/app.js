@@ -4,12 +4,22 @@ const express = require("express");
 const moment = require("moment");
 const sqlite3 = require("sqlite3");
 const path = require("path");
+const cookieParser = require("cookie-parser");
+const expressSession = require("express-session");
 
 const app = express();
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "assets")));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(
+  expressSession({
+    secret: "habit",
+    resave: true,
+    saveUninitialized: true,
+  })
+);
 
 // MARK : DB 세팅하기
 const db_name = path.join(__dirname, "myHabbits.db");
@@ -57,6 +67,29 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
+app.post("/login", (req, res) => {
+  const { userName, password } = req.body;
+
+  const authentication_sql = `
+    SELECT COUNT(1) AS count FROM users WHERE userName = '${userName}' AND password = '${password}';
+  `;
+  console.log(authentication_sql);
+  db.get(authentication_sql, (err, row) => {
+    console.log(row);
+    if (err) {
+      res.status(500).send(`DB Error: ${err.message}`);
+    } else if (row.count > 0) {
+      req.session.user = {
+        userName: userName,
+        authorized: true,
+      };
+      res.redirect("/habbit");
+    } else {
+      res.redirect("/login");
+    }
+  });
+});
+
 // MARK : Register
 app.get("/register", (req, res) => {
   res.render("register");
@@ -96,7 +129,7 @@ app.get("/habbit", (req, res) => {
   let sql = `
     SELECT *, (SELECT COUNT(1) FROM habbitRecords r WHERE r.habbitID = h.id AND r.isDeleted = FALSE) records
     FROM habbits h
-    WHERE h.isDeleted = FALSE
+    WHERE AND h.userID = ${userId} AND h.isDeleted = FALSE
     ORDER BY h.id DESC;
     `;
 
