@@ -135,7 +135,7 @@ app.get("/logout", (req, res) => {
 // MARK : Habbit
 app.get("/habbit", (req, res) => {
   let page = req.query.page ? parseInt(req.query.page) : 1;
-  const limit = 10;
+  const limit = 5;
   const offset = (page - 1) * limit;
 
   if (req.session.user) {
@@ -151,8 +151,6 @@ app.get("/habbit", (req, res) => {
       LIMIT ? OFFSET ?
       ;`;
     db.all(habbit_list_sql, [userId, limit, offset], (err, rows) => {
-      // console.log(userId, limit, offset);
-      // console.log(rows);
       if (err) {
         res.status(500).send(`Failed to load data 1. ${err.message}`);
       } else {
@@ -162,8 +160,6 @@ app.get("/habbit", (req, res) => {
           } else {
             const total = row.count;
             const totalPage = Math.ceil(total / limit);
-            // console.log(total);
-            console.log(rows);
             res.render("habbit_list", {
               habbits: rows,
               currentPage: page,
@@ -191,16 +187,16 @@ app.get("/habbit/add", (req, res) => {
 app.post("/habbit/add", (req, res) => {
   console.log(req.session.user);
   const userId = req.session.user["id"];
+  const { habbitName, startsAt, endsAt } = req.body;
   const createdAt = moment().format("YYYY-MM-DD");
 
   let sql = `
-  INSERT INTO habbits( userId, habbitName, startsAt, endsAt, createdAt ) VALUES ( ${userId}, '${req.body.habbitName}', '${req.body.startsAt}', '${req.body.endsAt}', '${createdAt}' )`;
+  INSERT INTO habbits( userId, habbitName, startsAt, endsAt, createdAt ) VALUES ( ${userId}, '${habbitName}', '${startsAt}', '${endsAt}', '${createdAt}' )`;
 
   db.run(sql, (err) => {
     console.log(sql);
     if (err) {
-      console.error(err.message);
-      res.status(500).send("Failed to add a habbit.");
+      res.status(500).send(`Failed to add a habbit: ${err.message}`);
     } else {
       console.log(sql);
       res.redirect("/habbit");
@@ -259,15 +255,21 @@ app.post("/habbit/:id/edit", (req, res) => {
 app.get("/habbit/delete/:id", (req, res) => {
   const id = req.params.id;
 
-  let delete_sql = `
-    UPDATE habbits SET isDeleted = TRUE WHERE id = ${id}
-  `;
+  let delete_records_sql = `
+    UPDATE habbitRecords SET isDeleted = TRUE WHERE habbitId = ?
+  ;`;
 
-  db.run(delete_sql, (err) => {
+  db.run(delete_records_sql, [id], (err) => {
     if (err) {
       res.status(500).send(`Failed to delete. ${err.message}`);
     } else {
-      res.redirect("/habbit");
+      let delete_habbit_sql = `
+        UPDATE habbits SET isDeleted = TRUE WHERE id = ?
+      ;`;
+
+      db.run(delete_habbit_sql, [id], (err) => {
+        res.redirect("/habbit");
+      });
     }
   });
 });
@@ -276,7 +278,7 @@ app.get("/habbit/delete/:id", (req, res) => {
 app.get("/habbit/:habbitId", (req, res) => {
   const habbitId = req.params.habbitId;
   const page = req.query.page ? parseInt(req.query.page) : 1;
-  const limit = 3;
+  const limit = 5;
   const offset = (page - 1) * limit;
 
   let sql = `
@@ -295,12 +297,14 @@ app.get("/habbit/:habbitId", (req, res) => {
     } else if (rows.length == 0) {
       res.redirect(`/habbit/${habbitId}/record/add`);
     } else {
-      db.get(`SELECT COUNT(1) AS count FROM habbits WHERE id = ${habbitId} AND isDeleted = FALSE;`, (err, row) => {
+      db.get(`SELECT COUNT(*) AS count FROM habbitRecords WHERE habbitId = ${habbitId} AND isDeleted = FALSE;`, (err, row) => {
         if (err) {
           res.status(500).send(`Failed to calculate the page: ${err.message};`);
         } else {
           const total = row.count;
           const totalPage = Math.ceil(total / limit);
+          console.log(total, page, totalPage);
+          console.log(`SELECT COUNT(*) AS count FROM habbitRecords WHERE habbitId = ${habbitId} AND isDeleted = FALSE;`);
           res.render("habbit_record_list", {
             records: rows,
             currentPage: page,
@@ -312,7 +316,7 @@ app.get("/habbit/:habbitId", (req, res) => {
   });
 });
 
-// MARK : Habbit add
+// MARK : Habbit record add
 app.get("/habbit/:habbitId/record/add", (req, res) => {
   const habbitId = req.params.habbitId;
   res.render("habbit_record_add", { habbitId });
@@ -333,7 +337,7 @@ app.post("/habbit/:habbitId/record/add", (req, res) => {
   });
 });
 
-// MARK : Habbit delete
+// MARK : Habbit record delete
 app.get("/habbit/:habbitId/record/delete/:id", (req, res) => {
   const habbitId = req.params.habbitId;
   const id = req.params.id;

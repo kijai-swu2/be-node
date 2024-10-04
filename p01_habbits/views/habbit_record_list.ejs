@@ -30,7 +30,10 @@
         </div>
       </nav>
       <section class="container-sm">
-        <h1 class="h1 mb-4">습관 기록</h1>
+        <h1 class="h1 mb-3">습관 기록</h1>
+        <div class="mb-4 d-flex justify-content-end">
+          <a href="/habbit/<%= records[0].habbitId %>/record/add/" class="btn btn-primary">습관 기록 추가하기</a>
+        </div>
         <table class="table">
           <thead>
             <tr>
@@ -44,7 +47,7 @@
             <% records.forEach(item => { %>
             <tr>
               <td><%= item.rowID %></td>
-              <td><%= item.recordContent %></a></td>
+              <td><%= item.recordContent %> / <%= item.id %></a></td>
               <td><%= item.createdAt %></td>
               <td><a href="/habbit/<%= item.habbitId %>/record/delete/<%= item.id %>" class="btn btn-outline-primary btn-sm">삭제</a></td>
             </tr>
@@ -59,7 +62,7 @@
             <% } else { %>
               <li class="page-item">
             <% } %>
-              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= currentPage - 1 %>"" aria-label="Previous">
+              <a class="page-link" href="/habbit/<%= records[0].habbitId %>?page=<%= currentPage - 1 %>"" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
               </a>
             </li>
@@ -69,7 +72,7 @@
               <% } else { %>
                 <li class="page-item">
               <% } %>
-              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= i %>"><%= i %></a>
+              <a class="page-link" href="/habbit/<%= records[0].habbitId %>?page=<%= i %>"><%= i %></a>
             </li>
             <% } %>
             <% if (currentPage == totalPage) { %>
@@ -77,15 +80,12 @@
             <% } else { %>
               <li class="page-item">
             <% } %>
-              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= currentPage + 1 %>" aria-label="Next">
+              <a class="page-link" href="/habbit/<%= records[0].habbitId %>?page=<%= currentPage + 1 %>" aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
               </a>
             </li>
           </ul>
           <% } %>
-          <div class="justify-content-end">
-            <a href="/habbit/<%= records[0].habbitId %>/record/add/" class="btn btn-primary">습관 기록 추가하기</a>
-          </div>
         </nav>
       </section>
     </main>
