@@ -11,21 +11,39 @@
   </head>
   <body>
     <main>
-      <section class="container-md">
+      <nav class="navbar navbar-expand-sm bg-dark" data-bs-theme="dark">
+        <div class="container-fluid">
+          <a href="/habbit" class="navbar-brand">습관</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/habbit">나의 습관</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/logout">로그아웃</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <section class="container-sm">
         <h1 class="h1 mb-4">습관 기록</h1>
         <table class="table">
           <thead>
             <tr>
-              <th scope="col">#</th>
-              <th scope="col">습관 기록</th>
-              <th scope="col">생성일</th>
-              <th scope="col">삭제</th>
+              <th scope="col" style="min-width: 70px;">#</th>
+              <th scope="col" style="width: 100%;">습관 기록</th>
+              <th scope="col" style="min-width: 130px;">생성일</th>
+              <th scope="col" style="min-width: 70px;">삭제</th>
             </tr>
           </thead>
           <tbody>
             <% records.forEach(item => { %>
             <tr>
-              <td><%= item.id %></td>
+              <td><%= item.rowID %></td>
               <td><%= item.recordContent %></a></td>
               <td><%= item.createdAt %></td>
               <td><a href="/habbit/<%= item.habbitId %>/record/delete/<%= item.id %>" class="btn btn-outline-primary btn-sm">삭제</a></td>
@@ -33,9 +51,42 @@
             <% }) %>
           </tbody>
         </table>
-        <div>
-          <a href="/habbit/<%= records[0].habbitId %>/record/add/" class="btn btn-primary">습관 기록 추가하기</a>
-        </div>
+        <nav>
+          <% if (totalPage > 1) { %>
+          <ul class="pagination justify-content-center">
+            <% if (currentPage == 1) { %>
+              <li class="page-item disabled">
+            <% } else { %>
+              <li class="page-item">
+            <% } %>
+              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= currentPage - 1 %>"" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <% for (i = 1; i <= totalPage; i++) { %>
+              <% if (currentPage == i) { %>
+                <li class="page-item active">
+              <% } else { %>
+                <li class="page-item">
+              <% } %>
+              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+            <% if (currentPage == totalPage) { %>
+              <li class="page-item disabled">
+            <% } else { %>
+              <li class="page-item">
+            <% } %>
+              <a class="page-link" href="/habbit/<%= item.habbitId %>?page=<%= currentPage + 1 %>" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+          <% } %>
+          <div class="justify-content-end">
+            <a href="/habbit/<%= records[0].habbitId %>/record/add/" class="btn btn-primary">습관 기록 추가하기</a>
+          </div>
+        </nav>
       </section>
     </main>
   </body>

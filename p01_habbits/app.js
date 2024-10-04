@@ -29,7 +29,6 @@ const create_users = `
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   userName VARCHAR(10),
-  email VARCHAR(20),
   password VARCHAR(20),
   createdAt DATE
 );`;
@@ -70,16 +69,18 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { userName, password } = req.body;
 
+  // 로그인 정보 및 id를 세션에 함께 저장하기
   const authentication_sql = `
-    SELECT COUNT(1) AS count FROM users WHERE userName = '${userName}' AND password = '${password}';
-  `;
-  console.log(authentication_sql);
+    SELECT id, COUNT(1) AS count
+    FROM users
+    WHERE userName = '${userName}' AND password = '${password}'
+    ;`;
   db.get(authentication_sql, (err, row) => {
-    console.log(row);
     if (err) {
       res.status(500).send(`DB Error: ${err.message}`);
     } else if (row.count > 0) {
       req.session.user = {
+        id: `${row.id}`,
         userName: userName,
         authorized: true,
       };
@@ -98,19 +99,19 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const createdAt = moment().format("YYYY-MM-DD");
 
-  const { userName, email, password } = req.body;
-  const email_check_sql = `SELECT COUNT(1) AS count FROM users WHERE email = '${"email"};`;
+  const { userName, password } = req.body;
+  const userName_check_sql = `SELECT COUNT(1) AS count FROM users WHERE userName = '${userName}';`;
 
-  db.get(email_check_sql, (err, row) => {
+  db.get(userName_check_sql, (err, row) => {
     if (err) {
       res.status(500).send(err.message);
     }
     if (row.count > 0) {
-      res.status(200).send("Email already exist.");
+      res.status(200).send("ID already exist.");
     } else {
       const insert_user_sql = `
-        INSERT INTO users( userName, email, password, createdAt ) VALUES (
-        '${req.body.userName}', '${req.body.email}', '${req.body.password}', '${createdAt}'
+        INSERT INTO users( userName, password, createdAt ) VALUES (
+        '${req.body.userName}', '${req.body.password}', '${createdAt}'
       );`;
       db.run(insert_user_sql, (err) => {
         if (err) {
@@ -124,34 +125,76 @@ app.post("/register", (req, res) => {
   });
 });
 
+app.get("/logout", (req, res) => {
+  if (req.session.user) {
+    req.session.user == null;
+  }
+  res.redirect("/login");
+});
+
 // MARK : Habbit
 app.get("/habbit", (req, res) => {
-  let sql = `
-    SELECT *, (SELECT COUNT(1) FROM habbitRecords r WHERE r.habbitID = h.id AND r.isDeleted = FALSE) records
-    FROM habbits h
-    WHERE AND h.userID = ${userId} AND h.isDeleted = FALSE
-    ORDER BY h.id DESC;
-    `;
+  let page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
 
-  db.all(sql, (err, rows) => {
-    if (err) {
-      res.status(500).send(`Failed to load data. ${err.message}`);
-    } else {
-      res.render("habbit_list", { habbits: rows });
-    }
-  });
+  if (req.session.user) {
+    const userId = req.session.user["id"];
+    let habbit_list_sql = `
+      SELECT
+        ROW_NUMBER() OVER(ORDER BY id) AS rowId,
+        *, 
+        (SELECT COUNT(1) FROM habbitRecords r WHERE r.habbitID = h.id AND r.isDeleted = FALSE) records
+      FROM habbits h
+      WHERE h.userId = ? AND h.isDeleted = FALSE
+      ORDER BY h.id DESC
+      LIMIT ? OFFSET ?
+      ;`;
+    db.all(habbit_list_sql, [userId, limit, offset], (err, rows) => {
+      // console.log(userId, limit, offset);
+      // console.log(rows);
+      if (err) {
+        res.status(500).send(`Failed to load data 1. ${err.message}`);
+      } else {
+        db.get(`SELECT COUNT(1) AS count FROM habbits WHERE userId = '${userId}' AND isDeleted = FALSE`, (err, row) => {
+          if (err) {
+            res.status(500).send(`Failed to load data 2. ${err.message}`);
+          } else {
+            const total = row.count;
+            const totalPage = Math.ceil(total / limit);
+            // console.log(total);
+            console.log(rows);
+            res.render("habbit_list", {
+              habbits: rows,
+              currentPage: page,
+              totalPage: totalPage,
+            });
+          }
+        });
+      }
+    });
+  } else {
+    res.redirect("/login");
+  }
 });
 
 // MARK : Habbit add
 app.get("/habbit/add", (req, res) => {
-  res.render("habbit_add");
+  if (req.session.user) {
+    console.log(req.session.user);
+    res.render("habbit_add");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.post("/habbit/add", (req, res) => {
+  console.log(req.session.user);
+  const userId = req.session.user["id"];
   const createdAt = moment().format("YYYY-MM-DD");
 
   let sql = `
-  INSERT INTO habbits( userId, habbitName, startsAt, endsAt, createdAt ) VALUES ( 1, '${req.body.habbitName}', '${req.body.startsAt}', '${req.body.endsAt}', '${createdAt}' )`;
+  INSERT INTO habbits( userId, habbitName, startsAt, endsAt, createdAt ) VALUES ( ${userId}, '${req.body.habbitName}', '${req.body.startsAt}', '${req.body.endsAt}', '${createdAt}' )`;
 
   db.run(sql, (err) => {
     console.log(sql);
@@ -160,6 +203,53 @@ app.post("/habbit/add", (req, res) => {
       res.status(500).send("Failed to add a habbit.");
     } else {
       console.log(sql);
+      res.redirect("/habbit");
+    }
+  });
+});
+
+// MARK : Habbit edit
+app.get("/habbit/:id/edit", (req, res) => {
+  const id = req.params.id;
+
+  let select_sql = `
+    SELECT *
+    FROM habbits
+    WHERE id = ${id};
+  `;
+  if (req.session.user) {
+    db.get(select_sql, (err, row) => {
+      if (err) {
+        res.status(500).send(`Failed to load a habbit: ${err.message}`);
+      } else {
+        console.log(row);
+        res.render("habbit_edit", { habbit: row });
+      }
+    });
+  } else {
+    res.redirect("/login");
+  }
+});
+
+app.post("/habbit/:id/edit", (req, res) => {
+  console.log(req.session.user);
+  const userId = req.session.user["id"];
+  const habbitId = req.params.id;
+
+  let update_sql = `
+  UPDATE habbits
+  SET habbitName = '${req.body.habbitName}',
+    startsAt = '${req.body.startsAt}',
+    endsAt = '${req.body.endsAt}'
+  WHERE id = ${habbitId}
+  ;`;
+
+  db.run(update_sql, (err) => {
+    console.log(update_sql);
+    if (err) {
+      console.error(err.message);
+      res.status(500).send("Failed to edit a habbit.");
+    } else {
       res.redirect("/habbit");
     }
   });
@@ -185,18 +275,39 @@ app.get("/habbit/delete/:id", (req, res) => {
 // MARK : Habbit record
 app.get("/habbit/:habbitId", (req, res) => {
   const habbitId = req.params.habbitId;
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = 3;
+  const offset = (page - 1) * limit;
 
   let sql = `
-    SELECT * FROM habbitRecords WHERE habbitId = ${habbitId} AND isDeleted = FALSE ORDER BY id DESC;
-  `;
+    SELECT
+      *,
+      ROW_NUMBER() OVER(ORDER BY habbitID) AS rowID
+    FROM habbitRecords
+    WHERE habbitId = ? AND isDeleted = FALSE
+    ORDER BY id DESC
+    LIMIT ? OFFSET ?
+    ;`;
 
-  db.all(sql, (err, rows) => {
+  db.all(sql, [habbitId, limit, offset], (err, rows) => {
     if (err) {
       console.error(err.message);
     } else if (rows.length == 0) {
       res.redirect(`/habbit/${habbitId}/record/add`);
     } else {
-      res.render("habbit_record_list", { records: rows });
+      db.get(`SELECT COUNT(1) AS count FROM habbits WHERE id = ${habbitId} AND isDeleted = FALSE;`, (err, row) => {
+        if (err) {
+          res.status(500).send(`Failed to calculate the page: ${err.message};`);
+        } else {
+          const total = row.count;
+          const totalPage = Math.ceil(total / limit);
+          res.render("habbit_record_list", {
+            records: rows,
+            currentPage: page,
+            totalPage: totalPage,
+          });
+        }
+      });
     }
   });
 });
