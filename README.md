@@ -149,3 +149,5 @@ RESTful API와는 다르게 단일 라우터를 사용해 적은 네트워크 �
 2. Config 파일에서 dialect, storage 설정하기
 
 3. 필요한 모델들을 추가해주기
+
+4. 데이터베이스와 모델을 동기화하기 : async / await
