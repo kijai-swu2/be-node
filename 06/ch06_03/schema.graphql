@@ -1,0 +1,37 @@
+## CRUD 작업을 담당하는 타입들 설정하기
+# CRUD 중 Read 작업은 Query 타입으로 설정
+type Query {
+  getPost(id: ID!): Post
+}
+
+# CRUD 중 Read를 제외한 나머지들에 사용하는 작업은 Mutation 타입으로 설정
+type Mutation {
+  createPost(input: PostInput): Post
+  updatePost(id: ID!, input: PostInput): Post
+  deletePost(id: ID!): Post
+}
+
+## 그 외의 타입들을 설정하기
+# 커스텀 자료형인 Post를 생성
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+}
+
+# 서버에 보낼 시 사용할 자료형: input 키워드로 생성
+input PostInput {
+  title: String!
+  content: String!
+}
+
+## 요청하기
+# 클라이언트에서 Mutation 타입을 사용해 게시글을 생성하는 요청
+mutation {
+  createPost(input: { title: "New post", content: "New post updated!." }) {
+    # 요청 시 반환할 데이터들을 선택
+    id
+    title
+    content
+  }
+}
