@@ -148,8 +148,9 @@ RESTful API와는 다르게 단일 라우터를 사용해 적은 네트워크 �
 
 2. Config 파일에서 DB 언어 및 DB 연결 설정하기
 
+   아래 예제에서는 Sqlite을 이용하기 때문에 .db 파일을 기준으로 설정함
+
    ```json
-   // Sqlite을 이용하기 때문에 .db 파일로 설정함
    "dialect": "sqlite",
    "storage": "post.db"
    ```
