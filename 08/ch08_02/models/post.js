@@ -13,5 +13,9 @@ module.exports = (sequelize, DataTypes) => {
     content: DataTypes.STRING,
     author: DataTypes.STRING(50),
   });
+  // API에서 Post 정보 호출 시 게시글과 함께 댓글 정보를 호출하기 위해 1:N 관계 설정
+  Post.associate = function (models) {
+    Post.hasMany(models.Comment);
+  };
   return Post;
 };
