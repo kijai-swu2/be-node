@@ -1,18 +1,18 @@
 const models = require("../models"); // models/index.js의 DB객체를 models에 할당
 
-const createPost = async (data) => {
+const createPosts = async (data) => {
   return await models.Post.create(data);
 };
 
 const findPostById = async (id) => {
   return await models.Post.findByPk(id, {
-    include: { model: models.Usert },
+    include: { model: models.User },
   });
 };
 
 const findAllPosts = async () => {
   return await models.Post.findAll({
-    include: { model: models.Usert },
+    include: { model: models.User },
   });
 };
 
@@ -29,7 +29,7 @@ const deletePost = async (id) => {
 };
 
 module.exports = {
-  createPost,
+  createPosts,
   findAllPosts,
   findPostById,
   updatePost,

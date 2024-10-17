@@ -7,7 +7,7 @@ const findPostById = async (id) => {
   return await postDao.findPostById(id);
 };
 const findAllPosts = async () => {
-  return await postDao.findAllPost();
+  return await postDao.findAllPosts();
 };
 const updatePost = async (id, data) => {
   return await postDao.updatePost(id, data);
