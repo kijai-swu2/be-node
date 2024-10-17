@@ -2,18 +2,35 @@ const express = require("express");
 const path = require("path");
 const models = require("./models"); // index.js 파일에 있는 모델들을 한번에 호출하기
 const exp = require("constants");
+const multer = require("multer");
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // "Content-Type: application/x-www-form-urlencoded"를 사용할 수 있게 해주는 미들웨어  설정하기
+app.use("/downloads", express.static(path.join(__dirname, "public/uploads"))); // "/downloads" 라는 가상의 라우터로 접근 시 "~/public/uploads" 폴더에 있는 파일들에 접근할 수 있게 해주는 미들웨어 설정하기
+
+const upload_dir = "public/uploads";
+const storage = multer.diskStorage({
+  destination: `./${upload_dir}`,
+  filename: function (req, file, cb) {
+    // 중복되는 이름의 파일을 업로드 시 파일이 덮어씌워지지 않도록 타임스탬프를 넣어주는 callback 함수를 추가하기
+    cb(null, path.parse(file.originalname).name + "-" + Date.now() + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage: storage });
 
 // 게시글 생성하기 - await로 설정된 ORM의 create 메서드가 실행되는 시점에 맞춰 async 함수를 실행하기
-app.post("/posts", async (req, res) => {
+app.post("/posts", upload.single("file"), async (req, res) => {
   const { title, content, author } = req.body;
+  let filename = req.file ? req.file.filename : null;
+  filename = `/downloads/${filename}`; // URI 추가해주기
+
   // await로 기다릴 대상 설정하기
   const post = await models.Post.create({
     title: title,
     content: content,
     author: author,
+    fileName: filename,
   });
   res.status(201).json(post);
 });
@@ -43,13 +60,19 @@ app.get("/posts/:id", async (req, res) => {
 });
 
 // 게시글 수정하기
-app.put("/posts/:id", async (req, res) => {
+app.put("/posts/:id", upload.single("file"), async (req, res) => {
   const id = req.params.id;
   const { title, content } = req.body;
   const post = await models.Post.findByPk(id);
+  let filename = req.file ? req.file.filename : null;
+  filename = `/downloads/${filename}`;
+
   if (post) {
     post.title = title;
     post.content = content;
+    if (req.file) {
+      post.fileName = filename;
+    }
     await post.save();
     res.status(200).json({ data: post });
   } else {

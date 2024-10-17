@@ -57,6 +57,9 @@ const moduleName = require("${moduleName}");
 - sequelize
   - define : To assign a model
   - sync : To sync the model to a database
+- multer
+- pg : PostgreSQL
+  - psql postgres : To open PostgreSQL
 
 # NPM & NPX
 
@@ -194,11 +197,13 @@ RESTful API와는 다르게 단일 라우터를 사용해 적은 네트워크 �
 
 ## Sequelize CLI
 
+Sequelize를 쉽게 이용하게 도와주는 모듈
+
 ### Migration
 
-데이터베이스 모델에 생기는 수정사항들의 버전을 관리하기 위해 사용하는 도구로, CLI commands를 통해 `/migration` 폴더 안에 마이그레이션 파일을 생성한 후 적용한다.
+데이터베이스 모델에 생기는 수정사항들의 버전을 관리하기 위해 사용하는 도구이다. `/migration` 폴더 안에 마이그레이션 파일을 생성, 내용을 작성한 후 적용하는 방식으로 사용한다.
 
-\* CLI 도구를 이용해 모델을 생성하면 파일에 버전 관리를 위한 migration 파일이 자동 생성된다.
+\* CLI commands를 이용해 생성된 모델의 경우 migration 파일이 자동 생성된다.
 
 ```powershell
 # Task라는 테이블과 title, userId라는 컬럼을 가지는 모델 만들기
@@ -209,16 +214,193 @@ npx sequelize-cli migration:generate --name add-column-task
 
 # migration 폴더 내 수정사항 적용하기
 npx sequelize-cli db:migrate
+
+# 가장 최근에 적용된 수정사항 모두 폐기하기
+npx sequelize-cli db:migrate:undo:all
 ```
 
 ### Seeding
 
-데이터베이스를 만든 후 초기 데이터나 더미 데이터를 삽입하는 것을 Seeding이라고 한다. CLI commands를 통해 `/seeders` 폴더 안에 시딩 파일을 생성한 후 적용한다.
+데이터베이스를 만든 후 초기 데이터나 더미 데이터를 삽입하는 것을 Seeding이라고 한다. `/seeders` 폴더 안에 시딩 파일을 생성, 내용을 작성한 후 실행하는 방식으로 사용한다.
 
 ```powershell
 # demo-task라는 이름의 seeder 파일을 만들기
 npx sequelize-cli seed:generate --name demo-task
 
-# seeder 폴더 내 수정사항 적용하기
+# seeder 폴더 내 파일들 모두 실행하기
 npx sequelize-cli db:seed:all
+
+# 모든 seeding 폐기하기
+npx sequelize-cli db:seed:undo:all
 ```
+
+# Multer
+
+파일을 업로드할 수 있게 도와주는 모듈
+
+## Procedure
+
+### 전제사항 : 미들웨어 설정하기
+
+- express.urlencoded 미들웨어 설정하기
+
+  `"Content-Type: application/x-www-form-urlencoded"`를 사용할 수 있게 해주는 미들웨어
+
+  ```js
+  app.use(express.urlencoded({ extended: true }));
+  ```
+
+- express.static 미들웨어 설정하기
+
+  가상의 라우터를 생성해 특정 디렉토리와 연결할 수 있게 도와주는 미들웨어로, 브라우저에서 `/${라우터}/${파일 이름}`으로 접근 시
+  `/${디렉토리}/${파일 이름}` 파일에 접근할 수 있게 한다.
+
+  ```js
+  // 가상의 라우터 "/downloads"를 생성하고, 해당 라우터를 파일들이 저장된 폴더 "~/public/uploads"와 연결
+  app.use("/downloads", express.static(path.join(__dirname, "public/uploads")));
+  ```
+
+### Storage 설정하기
+
+유저가 업로드한 파일이 저장될 디렉토리를 설정한다. `express.static` 미들웨어에서 사용했던 디렉토리와 동일하게 설정한다.
+
+```js
+// 디렉토리를 변수화하기
+const upload_dir = "public/uploads";
+
+// 디렉토리 변수를 이용해 Storage 설정하기
+const storage = multer.diskStorage({
+  destination: `./${upload_dir}`,
+  filename: function (req, file, cb) {
+    // 파일 업로드 시 이름 규칙을 추가하는 callback 함수 설정하기
+    cb(null, path.parse(file.originalname).name + "-" + Date.now() + path.extname(file.originalname)); // 중복되는 이름의 파일을 업로드 시 파일이 덮어씌워지지 않도록 타임스탬프를 넣기
+  },
+});
+```
+
+### Multer 인스턴싱하기
+
+```js
+// upload라는 이름의 변수를 선언해 Multer 작업들을 시작하기
+const upload = multer({ storage: storage });
+```
+
+### 업로드 기능 사용하기
+
+라우터에 파일 업로드 기능을 추가한다. 라우터 실행 매개변수로 Multer single 함수를 전달하고, callback 함수에 적용한다.
+
+```js
+// 첨부파일을 포함하는 게시글을 추가하기
+app.post("/posts", upload.single("file"), async (req, res) => {
+  const { title, content, author } = req.body;
+
+  // 삼항 연산자를 이용해 request에 첨부된 파일이 있을 시에 파일 이름을 반환하는 변수 설정하기
+  let filename = req.file ? req.file.filename : null;
+
+  // 파일 이름에 express.static 미들웨어로 설정한 라우터 URI 추가하기
+  filename = `/downloads/${filename}`;
+
+  // request에서 전달받은 내용으로 Post 모델에 데이터 삽입하기
+  const post = await models.Post.create({
+    title: title,
+    content: content,
+    author: author,
+    filename: filename,
+  });
+
+  /* 이하 생략 */
+});
+```
+
+# MVC Pattern
+
+## Key concepts
+
+- DAO : DB에 대한 CRUD 처리하는 역할
+- Service : DAO를 호출해서 데이터를 가져오거나 비즈니스 로직에 따라 가공하는 역할
+- Controller : 라우터에 따라 실행될 callback 함수들을 정의하는 역할
+
+## Data flow
+
+    Module > DAO > Service > Controller > Router
+
+## Code breakdown
+
+기존 코드를 MVC 패턴으로 쪼개보면 다음과 같다.
+
+```js
+// 기존 코드 : 게시글을 생성하기
+// # 1
+app.post("/posts", async (req, res) => {
+  // # 2
+  const { title, content, author } = req.body;
+
+  // # 3, 4
+  const post = await models.Post.create({
+    title: title,
+    content: content,
+    author: author,
+  });
+  res.status(201).json(post);
+});
+```
+
+### 1. Router 및 URI 설정
+
+#### 1-1. Router 설정
+
+`app.js` 파일에 라우터를 설정한다.
+
+```js
+const express = require("express");
+const postRoute = require("./routes/postRoute");
+const app = express();
+app.use("/posts", postRoute);
+```
+
+#### 1-2. URI 설정
+
+라우터 파일에 URI를 설정한다.
+
+```js
+const express = require("express");
+const router = express.Router();
+router.post("/", postController.createPost);
+```
+
+### 2. Controller & Service 간 통신
+
+클라이언트에서 받아온 정보들을 가지고 Service과 통신하고, 통신 결과에 따라 미리 정의된 함수들을 클라이언트에 실행한다.
+
+```js
+const createPost = async (req, res) => {
+  try {
+    const post = await postService.createPost(req.body);
+    res.status(201).json({ data: post });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+```
+
+### 3. Service & DAO 간 통신
+
+비즈니스 로직에 맞춰 DAO에서 반환된 데이터를 가공한다.
+
+```js
+const createPost = async (data) => {
+  return await postDao.createPost(data);
+};
+```
+
+### 4. DAO & Model 간 통신
+
+질의문을 통해 Model에 처리할 작업이나 트랜잭션을 정의한다.
+
+```js
+const createPost = async (data) => {
+  return await models.Post.create(data);
+};
+```
+
+# Jest
