@@ -3,7 +3,14 @@ const postService = require("../services/postService");
 const createPost = async (req, res) => {
   // 데이터를 가져올 때 오류가 나는 경우를 대비하기
   try {
-    const post = await postService.createPost(req.body);
+    // const post = await postService.createPost(req.body);
+    // userId를 토큰에서 가져오도록 수정
+    const user = req.user;
+    const post = await postService.createPost({
+      title: req.body.title,
+      content: req.body.content,
+      userId: user.id,
+    });
     res.status(201).json({ data: post });
   } catch (error) {
     res.status(500).json({ error: error.message });

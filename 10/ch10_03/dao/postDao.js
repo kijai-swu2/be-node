@@ -1,6 +1,6 @@
 const models = require("../models"); // models/index.js의 DB객체를 models에 할당
 
-const createPosts = async (data) => {
+const createPost = async (data) => {
   return await models.Post.create(data);
 };
 
@@ -29,7 +29,7 @@ const deletePost = async (id) => {
 };
 
 module.exports = {
-  createPosts,
+  createPost,
   findAllPosts,
   findPostById,
   updatePost,

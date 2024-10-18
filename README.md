@@ -30,11 +30,10 @@ const moduleName = require("${moduleName}");
   - parse().pathname
   - parse().query
 - express
-  - get
+  - get / post / put / delete : To create a router with a given method
   - listen
   - send
   - json
-  - post
 - nodemon
   - npm run ${keyword} : Run a file with nodemon, using a keyword.
 - pug
@@ -58,8 +57,17 @@ const moduleName = require("${moduleName}");
   - define : To assign a model
   - sync : To sync the model to a database
 - multer
-- pg : PostgreSQL
-  - psql postgres : To open PostgreSQL
+- bcryptjs : To crypt passwords and compare
+  - compare : To compare given data
+  - hash : To hash given data
+- jsonwebtoken : To manage JSON web tokens for authentification
+  - sign : To create a token
+  - verify : To compare tokens
+- mongoose
+  - connect : To connect to the DB
+  - connection : To select the current DB
+  - Schema : To define a schema
+  - model : To initiate models
 
 # NPM & NPX
 
@@ -404,3 +412,20 @@ const createPost = async (data) => {
 ```
 
 # Jest
+
+# JWT 인증
+
+JSON 형식의 웹 토큰을 이용하는 인증 방식이다. 로그인 시 Token 2종(Access, Refresh)을 발급하고, Storage에 저장해 검증에 이용한다.
+
+## Key concepts
+
+- Access token : 보안을 위해 단기간 동안만 유지되는 목적의 토큰
+- Refresh token : 로그인 인증을 유지하기 위해 생성하는 토큰으로, Access token이 만료됐을 경우 2차 검증의 수단으로 사용
+
+## Procedure
+
+    Access token으로 검증 시도
+    	→ (성공 시) 검증 완료, 프로세스 종료
+    	→ (실패 시) Refresh token으로 재검증
+    		→ (성공 시) Access 실행 후 재검증
+    		→ (실패 시) 검증 실패, 프로세스 종료
